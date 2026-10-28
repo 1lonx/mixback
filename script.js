@@ -1,7 +1,3 @@
-// Mixback — лендинг. Чистый JavaScript без библиотек.
-// 1) мобильное меню; 2) интерактивный демо-плеер; 3) форма раннего доступа.
-
-/* ===================== 1. Мобильное меню ===================== */
 const burger = document.querySelector(".burger");
 const nav = document.querySelector(".nav");
 
@@ -12,17 +8,12 @@ function setMenu(open) {
 }
 
 burger.addEventListener("click", () => setMenu(!nav.classList.contains("is-open")));
-// Закрываем меню после перехода по ссылке и по Escape
 nav.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") setMenu(false); });
 
-/* ===================== 2. Демо-плеер ===================== */
-// Трек: «Happy Happy HardPopCoreTastic» — Mesostic, лицензия CC0 (Wikimedia Commons).
-const BARS = 150;       // сколько столбиков в волне
-let duration = 273;     // длительность в секундах; уточнится, когда браузер загрузит файл
+const BARS = 150; 
+let duration = 273;
 
-// Данные трёх версий микса. В настоящем приложении они придут с сервера.
-// Звук у демо-версий один и тот же, а разница в громкости (LUFS) — настоящая.
 const versions = {
   v1: { lufs: -12.4, peak: -1.8, comments: [
     { time: 8, text: "интро слишком длинное?", resolved: true },
@@ -38,16 +29,14 @@ const versions = {
     { time: 240, text: "реверб добавлен, проверь", resolved: true },
   ] },
 };
-const LOUDEST_LUFS = -9.8; // самая громкая версия играет на полной громкости
-const TARGET_LUFS = -14;   // до этого уровня выравниваем версии в режиме A/B
+const LOUDEST_LUFS = -9.8;
+const TARGET_LUFS = -14
 
-// Состояние плеера
 let currentVersion = "v3";
-let position = 0;       // текущая секунда
-let pendingTime = null; // секунда, на которую пишем новый комментарий
-let peaks = null;       // амплитуды настоящего трека (0…1) для каждого столбика
+let position = 0; 
+let pendingTime = null;
+let peaks = null;
 
-// Элементы страницы
 const audio = document.getElementById("audio");
 const waveEl = document.getElementById("wave");
 const waveSvg = document.getElementById("wave-svg");
@@ -70,23 +59,19 @@ const hoverEl = document.getElementById("wave-hover");
 const hoverTimeEl = document.getElementById("wave-hover-time");
 const versionBtns = document.querySelectorAll(".versions__btn");
 
-// Секунды → «m:ss»
 function formatTime(sec) {
   const s = Math.floor(sec);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-// Число → «−9,8» (русский формат с настоящим минусом)
 function formatDb(value) {
   return value.toFixed(1).replace(".", ",").replace("-", "−");
 }
 
-// Децибелы → множитель громкости: −6 dB ≈ в 2 раза тише
 function dbToGain(db) {
   return Math.pow(10, db / 20);
 }
 
-// Запасная волна, пока настоящая не построена (или если файл открыт без сервера)
 function fallbackPeaks() {
   let s = 5;
   const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
@@ -97,24 +82,18 @@ function fallbackPeaks() {
   });
 }
 
-// Строим волну из настоящего звука: декодируем файл и считаем громкость каждого отрезка.
-// В реальном Mixback это делает сервер через ffmpeg, а клиент получает готовые пики.
 async function loadRealPeaks() {
   try {
     const response = await fetch(audio.currentSrc || audio.src);
-    // OfflineAudioContext не требует звуковой карты, поэтому декодирование не «зависает»
     const buffer = await new OfflineAudioContext(1, 1, 44100).decodeAudioData(await response.arrayBuffer());
     const data = buffer.getChannelData(0);
     const chunk = Math.floor(data.length / BARS);
-    // Для каждого отрезка считаем среднюю громкость (RMS)
     const result = [];
     for (let i = 0; i < BARS; i++) {
       let sum = 0, count = 0;
       for (let j = i * chunk; j < (i + 1) * chunk; j += 16) { sum += data[j] * data[j]; count++; }
       result.push(Math.sqrt(sum / count));
     }
-    // Растягиваем разницу между тихим и громким, чтобы были видны куплеты и припевы.
-    // Берём 15-й и 97-й процентили, чтобы тихий хвост и редкие всплески не сплющили волну.
     const sorted = [...result].sort((a, b) => a - b);
     const low = sorted[Math.floor(BARS * 0.15)], high = sorted[Math.floor(BARS * 0.97)];
     peaks = result.map((r) => {
@@ -124,12 +103,9 @@ async function loadRealPeaks() {
     drawWave();
     renderPosition();
   } catch {
-    // Например, страница открыта как файл (file://) — тогда остаётся запасная волна
   }
 }
 
-// Рисуем волну как SVG: столбик вверх от «горизонта» и его бледное отражение вниз.
-// Тихие версии рисуются ниже — громкость видна глазами.
 function drawWave() {
   const source = peaks || fallbackPeaks();
   const scale = dbToGain(versions[currentVersion].lufs - LOUDEST_LUFS);
@@ -147,7 +123,6 @@ function drawWave() {
   waveSvg.innerHTML = html;
 }
 
-// Обновляем курсор, время и подсветку уже проигранных столбиков
 function renderPosition() {
   const frac = position / duration;
   cursorEl.style.left = `${frac * 100}%`;
@@ -159,8 +134,6 @@ function renderPosition() {
   waveSvg.querySelectorAll(".bar").forEach((bar, i) => bar.classList.toggle("is-played", i < played));
 }
 
-// Громкость и пик. В режиме A/B все версии звучат на одном уровне −14 LUFS —
-// это слышно по-настоящему: меняется громкость плеера.
 function renderStats() {
   const v = versions[currentVersion];
   if (abToggle.checked) {
@@ -174,7 +147,6 @@ function renderStats() {
   peakEl.textContent = `${formatDb(v.peak)} dBTP`;
 }
 
-// Метки над волной и список комментариев
 function renderComments(newIndex = -1) {
   const comments = versions[currentVersion].comments
     .map((c, index) => ({ ...c, index }))
@@ -196,7 +168,7 @@ function renderComments(newIndex = -1) {
     timeBtn.setAttribute("aria-label", `Перейти к ${formatTime(c.time)}`);
     timeBtn.addEventListener("click", () => seek(c.time));
 
-    const text = document.createElement("span"); // textContent защищает от HTML в тексте комментария
+    const text = document.createElement("span");
     text.className = "comment__text";
     text.textContent = c.text;
 
@@ -217,7 +189,6 @@ function renderComments(newIndex = -1) {
   countEl.textContent = `${comments.length} (открыто: ${open})`;
 }
 
-// Переключение версии
 function selectVersion(name) {
   currentVersion = name;
   versionBtns.forEach((btn) => {
@@ -232,14 +203,12 @@ function selectVersion(name) {
   renderComments();
 }
 
-// Перемотка
 function seek(sec) {
   position = Math.min(Math.max(sec, 0), duration);
   audio.currentTime = position;
   renderPosition();
 }
 
-// Воспроизведение: пока трек играет, каждый кадр двигаем курсор
 function tick() {
   if (audio.paused) return;
   position = audio.currentTime;
@@ -254,7 +223,7 @@ function setPlayIcon(playing) {
 
 function togglePlay() {
   if (audio.paused) {
-    audio.play().catch(() => setPlayIcon(false)); // браузер может запретить звук — тогда просто остаёмся на паузе
+    audio.play().catch(() => setPlayIcon(false));
   } else {
     audio.pause();
   }
@@ -271,7 +240,6 @@ audio.addEventListener("loadedmetadata", () => {
   renderComments();
 });
 
-// Форма комментария
 function openForm(time) {
   pendingTime = time;
   commentTimeEl.textContent = formatTime(time);
@@ -285,19 +253,16 @@ function closeForm() {
   pendingTime = null;
 }
 
-// Доля трека (0…1) под указателем мыши
 function fracFromEvent(e) {
   const rect = waveEl.getBoundingClientRect();
   return Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
 }
 
-// Клик по волне: перематываем и слушаем с этого места
 waveEl.addEventListener("click", (e) => {
   seek(fracFromEvent(e) * duration);
   if (audio.paused) togglePlay();
 });
 
-// Наведение: подсвечиваем волну до курсора и показываем время
 waveEl.addEventListener("mousemove", (e) => {
   const frac = fracFromEvent(e);
   waveEl.classList.add("is-hovering");
@@ -312,13 +277,11 @@ waveEl.addEventListener("mouseleave", () => {
   waveSvg.querySelectorAll(".bar.is-hover").forEach((bar) => bar.classList.remove("is-hover"));
 });
 
-// Кнопка «+ Комментарий»: правка на текущей секунде, трек ставим на паузу, чтобы спокойно написать
 commentBtn.addEventListener("click", () => {
   audio.pause();
   openForm(Math.floor(position));
 });
 
-// Управление волной с клавиатуры
 waveEl.addEventListener("keydown", (e) => {
   const steps = { ArrowRight: 5, ArrowUp: 5, ArrowLeft: -5, ArrowDown: -5 };
   if (e.key in steps) {
@@ -358,8 +321,6 @@ versionBtns.forEach((btn) => btn.addEventListener("click", () => selectVersion(b
 selectVersion(currentVersion);
 loadRealPeaks();
 
-/* ===================== 3. Форма раннего доступа ===================== */
-// Бэкенда на этом этапе нет: проверяем почту и показываем сообщение.
 const signupForm = document.getElementById("signup-form");
 const emailInput = document.getElementById("signup-email");
 const signupMsg = document.getElementById("signup-error");
