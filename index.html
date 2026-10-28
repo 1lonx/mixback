@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mixback — фидбэк на сведение прямо на волне трека</title>
+  <meta name="description" content="Mixback — сервис для звукорежиссёров и артистов: комментарии на таймкодах волны, версии микса, A/B-сравнение с выравниванием громкости и AI-чек-лист правок.">
+  <meta name="theme-color" content="#0f0f10">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Перейти к содержимому</a>
+
+  <!-- ===== Шапка ===== -->
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a class="logo" href="#top" aria-label="Mixback — на главную">
+        <svg class="logo__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2" y="9" width="3" height="6" rx="1.5"/>
+          <rect x="7" y="5" width="3" height="14" rx="1.5"/>
+          <rect x="12" y="2" width="3" height="20" rx="1.5"/>
+          <rect x="17" y="7" width="3" height="10" rx="1.5"/>
+        </svg>
+        <span>Mixback</span>
+      </a>
+
+      <button class="burger" type="button" aria-label="Открыть меню" aria-expanded="false" aria-controls="site-nav">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav class="nav" id="site-nav" aria-label="Основная навигация">
+        <ul class="nav__list">
+          <li><a href="#problem">Проблема</a></li>
+          <li><a href="#how">Как работает</a></li>
+          <li><a href="#features">Возможности</a></li>
+          <li><a href="#audience">Для кого</a></li>
+          <li><a href="#faq">Вопросы</a></li>
+        </ul>
+        <a class="btn btn--light btn--sm" href="#signup">Ранний доступ</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ===== Первый экран ===== -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container hero__inner">
+        <div class="hero__text">
+          <p class="eyebrow">Для звукорежиссёров и артистов</p>
+          <h1 id="hero-title">Фидбэк на&nbsp;сведение прямо на&nbsp;волне трека</h1>
+          <p class="hero__lead">
+            Каждая правка привязана к&nbsp;секунде и&nbsp;к&nbsp;версии микса.
+            Без «где-то во&nbsp;втором припеве», без <code>mix_final_final_2.wav</code> в&nbsp;чате.
+          </p>
+          <div class="hero__actions">
+            <a class="btn btn--light" href="#signup">Получить ранний доступ</a>
+            <a class="btn btn--ghost" href="#demo">Попробовать демо ↓</a>
+          </div>
+          <ul class="hero__facts">
+            <li><strong>WAV и MP3</strong> до 200 МБ</li>
+            <li><strong>LUFS</strong> и true peak сразу</li>
+            <li><strong>Бесплатно</strong> на время беты</li>
+          </ul>
+        </div>
+
+        <!-- Интерактивный макет плеера -->
+        <div class="player" id="demo" role="group" aria-labelledby="player-title">
+          <div class="player__top">
+            <div>
+              <p class="player__crumbs">Проекты / <span id="player-title">Happy Happy</span></p>
+              <p class="player__meta">артист: Mesostic · 4:33 · MP3</p>
+            </div>
+            <div class="versions" role="group" aria-label="Версия микса">
+              <button type="button" class="versions__btn" data-version="v1" aria-pressed="false">v1</button>
+              <button type="button" class="versions__btn" data-version="v2" aria-pressed="false">v2</button>
+              <button type="button" class="versions__btn is-active" data-version="v3" aria-pressed="true">v3</button>
+            </div>
+          </div>
+
+          <div class="player__stats">
+            <span class="stat"><span class="stat__label">Громкость</span> <span id="stat-lufs">−9,8 LUFS</span></span>
+            <span class="stat"><span class="stat__label">Пик</span> <span id="stat-peak">−0,6 dBTP</span></span>
+            <label class="ab">
+              <input type="checkbox" id="ab-toggle">
+              <span class="ab__switch" aria-hidden="true"></span>
+              <span>A/B с выравниванием</span>
+            </label>
+          </div>
+
+          <div class="wave-wrap">
+            <div class="markers" id="markers" aria-hidden="true"></div>
+            <div class="wave" id="wave" role="slider" tabindex="0"
+                 aria-label="Волна трека. Стрелки — перемотка, пробел — пуск и пауза, Enter — комментарий на этой секунде"
+                 aria-valuemin="0" aria-valuemax="273" aria-valuenow="0" aria-valuetext="0:00">
+              <svg id="wave-svg" preserveAspectRatio="none" aria-hidden="true"></svg>
+              <div class="wave__cursor" id="wave-cursor"></div>
+              <div class="wave__hover" id="wave-hover" aria-hidden="true"><span id="wave-hover-time">0:00</span></div>
+            </div>
+          </div>
+
+          <div class="player__controls">
+            <button type="button" class="play" id="play-btn" aria-label="Воспроизвести">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path class="play__icon" d="M8 5v14l11-7z"/></svg>
+            </button>
+            <span class="time"><span id="time-now">0:00</span> / <span id="time-total">4:33</span></span>
+            <button type="button" class="btn btn--light btn--sm add-comment" id="comment-btn">
+              + Комментарий на <span id="comment-btn-time">0:00</span>
+            </button>
+          </div>
+          <p class="player__hint">Клик по волне — слушать с этого места. Метки над волной — правки артиста.</p>
+
+          <form class="comment-form" id="comment-form" hidden>
+            <label for="comment-input">Комментарий на <span id="comment-time">0:00</span></label>
+            <div class="comment-form__row">
+              <input id="comment-input" type="text" maxlength="120" placeholder="Например: вокал тонет в куплете" required>
+              <button class="btn btn--light btn--sm" type="submit">Добавить</button>
+              <button class="btn btn--ghost btn--sm" type="button" id="comment-cancel">Отмена</button>
+            </div>
+          </form>
+
+          <div class="comments">
+            <p class="comments__title">Комментарии · <span id="comments-count">0</span></p>
+            <ul class="comments__list" id="comments-list" aria-live="polite"></ul>
+          </div>
+          <audio id="audio" src="assets/track.mp3" preload="metadata"></audio>
+          <p class="player__note">
+            Демо-трек: «Happy Happy HardPopCoreTastic» — Mesostic,
+            <a href="https://commons.wikimedia.org/wiki/File:Happy_Happy_HardPopCoreTastic.ogg" target="_blank" rel="noopener">CC0, Wikimedia Commons</a>.
+            Версии v1–v3 отличаются громкостью, комментарии хранятся только на этой странице.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Проблема ===== -->
+    <section class="section" id="problem" aria-labelledby="problem-title">
+      <div class="container">
+        <p class="eyebrow eyebrow--dark">Проблема</p>
+        <h2 id="problem-title">Правки к&nbsp;миксу живут в&nbsp;переписке</h2>
+
+        <div class="problem">
+          <figure class="chat" aria-label="Пример переписки звукорежиссёра с артистом">
+            <figcaption class="chat__head">Чат с артистом</figcaption>
+            <p class="chat__msg chat__msg--in">во втором припеве вокал как будто тише?</p>
+            <p class="chat__msg chat__msg--out">это в какой версии? mix_final_v3.wav?</p>
+            <p class="chat__msg chat__msg--in">не, в mix_final_final_2 вроде</p>
+            <p class="chat__msg chat__msg--in">и ещё где-то в середине бочка гудит</p>
+            <p class="chat__msg chat__msg--out">где именно? скинь таймкод 🙏</p>
+          </figure>
+
+          <ol class="pains">
+            <li class="pain">
+              <h3>«Где-то во&nbsp;втором припеве»</h3>
+              <p>Правку нельзя привязать к&nbsp;точной секунде — звукорежиссёр ищет место на&nbsp;слух.</p>
+            </li>
+            <li class="pain">
+              <h3>Версии теряются</h3>
+              <p>Файлы лежат в&nbsp;чате и&nbsp;в&nbsp;облаке, непонятно, к&nbsp;какой версии относится комментарий.</p>
+            </li>
+            <li class="pain">
+              <h3>Правки разбросаны</h3>
+              <p>Список того, что нужно исправить, собирается вручную из&nbsp;десятков сообщений.</p>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Как работает ===== -->
+    <section class="section section--tint" id="how" aria-labelledby="how-title">
+      <div class="container">
+        <p class="eyebrow eyebrow--dark">Как работает</p>
+        <h2 id="how-title">Цикл правок вместо бесконечной переписки</h2>
+        <ol class="steps">
+          <li class="step">
+            <span class="step__num" aria-hidden="true">01</span>
+            <h3>Загрузка</h3>
+            <p>Звукорежиссёр загружает WAV или MP3 — сервер строит волну и&nbsp;считает громкость.</p>
+          </li>
+          <li class="step">
+            <span class="step__num" aria-hidden="true">02</span>
+            <h3>Ссылка</h3>
+            <p>Артист получает приватную ссылку на&nbsp;проект и&nbsp;входит по&nbsp;приглашению.</p>
+          </li>
+          <li class="step">
+            <span class="step__num" aria-hidden="true">03</span>
+            <h3>Правки</h3>
+            <p>Комментарии ставятся кликом по&nbsp;волне и&nbsp;привязаны к&nbsp;таймкоду.</p>
+          </li>
+          <li class="step">
+            <span class="step__num" aria-hidden="true">04</span>
+            <h3>Чек-лист</h3>
+            <p>AI собирает правки в&nbsp;список, звукорежиссёр отмечает выполненные и&nbsp;грузит v4.</p>
+          </li>
+        </ol>
+        <p class="steps__loop">↻ Вся история остаётся в&nbsp;проекте: видно, что просили в&nbsp;v2 и&nbsp;что исправлено в&nbsp;v3.</p>
+      </div>
+    </section>
+
+    <!-- ===== Возможности ===== -->
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="container">
+        <p class="eyebrow eyebrow--dark">Возможности</p>
+        <h2 id="features-title">Всё, что нужно для одного цикла «микс&nbsp;→ правки&nbsp;→ новая версия»</h2>
+
+        <ul class="features">
+          <li class="feature">
+            <svg class="feature__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10" /><circle cx="15" cy="4" r="2"/></svg>
+            <h3>Комментарии на таймкодах</h3>
+            <p>Клик по&nbsp;волне — и&nbsp;правка привязана к&nbsp;точной секунде. Метки видны прямо над треком.</p>
+          </li>
+          <li class="feature">
+            <svg class="feature__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="12" height="12" rx="2"/><path d="M8 20h10a2 2 0 0 0 2-2V8"/></svg>
+            <h3>История версий</h3>
+            <p>v1, v2, v3… в&nbsp;одном проекте. У&nbsp;каждой версии — свои комментарии и&nbsp;статус.</p>
+          </li>
+          <li class="feature">
+            <svg class="feature__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18 8 6l4 12M5.5 14h5M15 6h3a3 3 0 0 1 0 6h-3zm0 6h3.5a3 3 0 0 1 0 6H15z"/></svg>
+            <h3>Честное A/B-сравнение</h3>
+            <p>Версии выравниваются по&nbsp;громкости, чтобы более громкий микс не&nbsp;казался лучше «на&nbsp;слух».</p>
+          </li>
+          <li class="feature">
+            <svg class="feature__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+            <h3>LUFS и&nbsp;true peak</h3>
+            <p>Громкость и&nbsp;пиковый уровень каждой версии видны сразу — не&nbsp;нужно открывать DAW.</p>
+          </li>
+          <li class="feature">
+            <svg class="feature__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 2 2 4-4M4 15l2 2 4-4M14 7h6M14 15h6"/></svg>
+            <h3>AI-чек-лист правок</h3>
+            <p>Открытые комментарии собираются в&nbsp;список по&nbsp;группам: вокал, низ, эффекты — с&nbsp;таймкодами.</p>
+          </li>
+          <li class="feature">
+            <svg class="feature__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+            <h3>Удобно с&nbsp;телефона</h3>
+            <p>Артисты часто слушают микс в&nbsp;дороге — плеер и&nbsp;комментарии адаптированы под мобильный.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== Витрина: чек-лист и мобильный экран ===== -->
+    <section class="section section--dark" aria-labelledby="showcase-title">
+      <div class="container showcase">
+        <div class="showcase__text">
+          <p class="eyebrow">AI-чек-лист</p>
+          <h2 id="showcase-title">Из&nbsp;десятка комментариев — один понятный список</h2>
+          <p>
+            Нажмите «Собрать чек-лист»: сервер отправит открытые правки версии в&nbsp;языковую модель
+            и&nbsp;вернёт их&nbsp;сгруппированными по&nbsp;категориям. Пункты можно отмечать по&nbsp;мере работы над следующей версией.
+          </p>
+          <a class="btn btn--light" href="#signup">Хочу так же</a>
+        </div>
+
+        <div class="phone" aria-label="Пример экрана чек-листа на телефоне" role="img">
+          <div class="phone__screen">
+            <p class="phone__title">Чек-лист правок · v3</p>
+            <ul class="checklist" aria-hidden="true">
+              <li class="checklist__group">Вокал</li>
+              <li class="checklist__item is-done"><span class="box"></span>поднять в куплете <time>0:42</time></li>
+              <li class="checklist__group">Низ</li>
+              <li class="checklist__item"><span class="box"></span>убрать гул бочки <time>1:22</time></li>
+              <li class="checklist__item"><span class="box"></span>сузить бас в припеве <time>2:05</time></li>
+              <li class="checklist__group">Эффекты</li>
+              <li class="checklist__item is-done"><span class="box"></span>меньше реверба <time>3:10</time></li>
+            </ul>
+            <span class="phone__btn">Загрузить v4</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Сравнение ===== -->
+    <section class="section" aria-labelledby="compare-title">
+      <div class="container">
+        <p class="eyebrow eyebrow--dark">Сравнение</p>
+        <h2 id="compare-title">Почему не&nbsp;просто мессенджер и&nbsp;облако</h2>
+        <div class="table-wrap" tabindex="0">
+          <table class="compare">
+            <caption class="visually-hidden">Сравнение: мессенджер и облако против Mixback</caption>
+            <thead>
+              <tr>
+                <th scope="col">Задача</th>
+                <th scope="col">Мессенджер + облако</th>
+                <th scope="col">Mixback</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Комментарий к моменту</th><td>«где-то во втором припеве»</td><td>клик по волне, точный таймкод</td></tr>
+              <tr><th scope="row">Версии микса</th><td>файлы в чате и папках</td><td>история v1…vN в одном проекте</td></tr>
+              <tr><th scope="row">Сравнение версий</th><td>переключать файлы вручную</td><td>A/B с выравниванием по LUFS</td></tr>
+              <tr><th scope="row">Громкость и пики</th><td>открыть в DAW</td><td>видны сразу у каждой версии</td></tr>
+              <tr><th scope="row">Список правок</th><td>собирать вручную</td><td>AI-чек-лист с таймкодами</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Для кого ===== -->
+    <section class="section section--tint" id="audience" aria-labelledby="audience-title">
+      <div class="container">
+        <p class="eyebrow eyebrow--dark">Для кого</p>
+        <h2 id="audience-title">Для тех, кто доводит трек до&nbsp;релиза</h2>
+        <ul class="audience">
+          <li class="person">
+            <span class="person__tag">Сводит</span>
+            <h3>Звукорежиссёры</h3>
+            <p>Фрилансеры, которые сводят удалённо для нескольких артистов и&nbsp;устали искать правки в&nbsp;чатах.</p>
+          </li>
+          <li class="person">
+            <span class="person__tag">Согласует</span>
+            <h3>Продюсеры и&nbsp;битмейкеры</h3>
+            <p>Согласуют демо и&nbsp;аранжировки с&nbsp;артистами и&nbsp;хотят видеть всю историю изменений.</p>
+          </li>
+          <li class="person">
+            <span class="person__tag">Слушает</span>
+            <h3>Независимые артисты</h3>
+            <p>Заказывают сведение и&nbsp;хотят понятный процесс: сказал&nbsp;— увидел, что исправлено.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== FAQ ===== -->
+    <section class="section" id="faq" aria-labelledby="faq-title">
+      <div class="container container--narrow">
+        <p class="eyebrow eyebrow--dark">Вопросы</p>
+        <h2 id="faq-title">Частые вопросы</h2>
+        <div class="faq">
+          <details>
+            <summary>Артисту нужно регистрироваться?</summary>
+            <p>Артист получает приватную ссылку-приглашение на&nbsp;проект. Регистрация занимает минуту, зато комментарии подписаны и&nbsp;никто посторонний не&nbsp;услышит неизданный трек.</p>
+          </details>
+          <details>
+            <summary>Какие форматы поддерживаются?</summary>
+            <p>WAV и&nbsp;MP3. Сервер сам построит волну и&nbsp;посчитает громкость в&nbsp;LUFS и&nbsp;пиковый уровень. Если файл слишком большой или это не&nbsp;аудио, вы&nbsp;увидите понятную ошибку.</p>
+          </details>
+          <details>
+            <summary>Зачем выравнивать громкость в A/B?</summary>
+            <p>Более громкая версия на&nbsp;слух почти всегда кажется лучше. Mixback подгоняет версии к&nbsp;одному уровню по&nbsp;LUFS, чтобы вы&nbsp;сравнивали сведение, а&nbsp;не&nbsp;громкость.</p>
+          </details>
+          <details>
+            <summary>Кто видит мои треки?</summary>
+            <p>Только участники проекта. Проекты приватные, доступ выдаётся по&nbsp;ролям: владелец и&nbsp;приглашённые артисты.</p>
+          </details>
+          <details>
+            <summary>Сколько это стоит?</summary>
+            <p>На&nbsp;время беты — бесплатно. Оставьте почту, и&nbsp;мы&nbsp;пришлём приглашение, как только откроем доступ.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Призыв к действию ===== -->
+    <section class="section section--dark cta" id="signup" aria-labelledby="signup-title">
+      <div class="container container--narrow cta__inner">
+        <h2 id="signup-title">Хватит искать правки в&nbsp;чате</h2>
+        <p>Оставьте почту — пришлём приглашение в&nbsp;бету Mixback.</p>
+        <form class="signup" id="signup-form" novalidate>
+          <div class="signup__field">
+            <label for="signup-email">Электронная почта</label>
+            <input id="signup-email" name="email" type="email" autocomplete="email"
+                   placeholder="you@example.com" required aria-describedby="signup-error">
+          </div>
+          <fieldset class="signup__roles">
+            <legend>Я —</legend>
+            <label><input type="radio" name="role" value="engineer" checked> звукорежиссёр</label>
+            <label><input type="radio" name="role" value="producer"> продюсер</label>
+            <label><input type="radio" name="role" value="artist"> артист</label>
+          </fieldset>
+          <button class="btn btn--light" type="submit">Получить ранний доступ</button>
+          <p class="signup__msg" id="signup-error" role="alert" aria-live="assertive"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p>© 2026 Mixback · учебный итоговый проект · музыка в демо: Mesostic (CC0)</p>
+      <a href="#top">Наверх ↑</a>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
